@@ -28,8 +28,8 @@ typedef struct ts_packet_s
   uint8_t   afc;            // Adaptation field control
   uint8_t   cc;             // Continuity counter
 
-  uint8_t   raw_size;
-  uint8_t   raw_tab[TS_PACKET_SIZE];
+  //uint8_t   raw_size;
+  //uint8_t   raw_tab[TS_PACKET_SIZE];
 
 } ts_packet_t;
 
@@ -50,8 +50,7 @@ class TsFileBase
 
     bool parse(void);
 
-    bool getTsPackets(uint16_t pid, std::vector<ts_packet_t>& packets);
-    bool getTsPids(std::map<uint16_t, ts_pid_t>& pids);
+    bool getTsPids(std::map<uint16_t, ts_pid_t>** pids);
 
     bool extractPid(uint16_t pid, std::string fileName);
 

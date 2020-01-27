@@ -9,7 +9,7 @@
 
 #include "TsFile.hpp"
 
-#define PID_EXCTRACTOR_VERSION    "0.0.2"
+#define PID_EXCTRACTOR_VERSION    "0.0.3"
 
 #define UNKNOWN_PID   0xFFFF
 
@@ -69,9 +69,7 @@ void showTsPids(std::map<uint16_t, ts_pid_t>& pids)
   printf("List of pids (%d)\n\r", pids_cnt);
   for (std::map<uint16_t,ts_pid_t>::iterator it = pids.begin(); it != pids.end(); it++)
   {
-    ts_pid_t pid = it->second;
-
-    printf("    0x%04X [%4d] - %ul\n\r", pid.pid, pid.pid, (unsigned long) pid.count);
+    printf("    0x%04X [%4d] - %u\n\r", it->second.pid, it->second.pid, (unsigned long) it->second.count);
   }
 }
 
@@ -95,11 +93,11 @@ bool parseTsStream(uint16_t pid, char* in, char* out)
     }
     else
     {
-      std::map<uint16_t, ts_pid_t> pids;
+      std::map<uint16_t, ts_pid_t>* pids;
 
-      if (tsfile.getTsPids(pids))
+      if (tsfile.getTsPids(&pids))
       {
-        showTsPids(pids);
+        showTsPids(*pids);
         result = true;
       }
     }
