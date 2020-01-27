@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2019, 4Embedded.Systems all rights reserved.
- */
+  */
 
 #include <cstdio>
 #include <cstring>
@@ -179,7 +179,7 @@ bool TsFileBase::writePid(uint16_t pid, std::vector<ts_packet_t>& packets, std::
 bool TsFileBase::extractPid(uint16_t pid, std::string fileName)
 {
   std::map<uint16_t, ts_pid_t>::iterator it;
-  bool result = true;
+  bool result = false;
 
   DBGS(DbgWrite("++%s(pid: 0x%04X [%d], fileName: %s)\n", __func__, pid, pid, fileName.c_str());)
   it = m_ts_pids.find(pid);
@@ -193,7 +193,10 @@ bool TsFileBase::extractPid(uint16_t pid, std::string fileName)
     }
     result = true;
   }
-
+  else
+  {
+    printf("No Pid: 0x%04X [%d]\n\r", pid, pid);
+  }
   DBGR(DbgWrite("--%s() - result: %d\n", __func__, result);)
   return result;
 }

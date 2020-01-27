@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2019, 4Embedded.Systems all rights reserved.
- */
+  */
 
 #include <cstdio>
 #include <cstring>
@@ -9,13 +9,14 @@
 
 #include "TsFile.hpp"
 
-#define PID_EXCTRACTOR_VERSION    "0.0.1"
+#define PID_EXCTRACTOR_VERSION    "0.0.2"
 
+#define UNKNOWN_PID   0xFFFF
 
-int getParams(int argc, char* argv[], uint16_t* pid, char** in, char** out)
+bool getParams(int argc, char* argv[], uint16_t* pid, char** in, char** out)
 {
   int itr = 0;
-  int result = 2;
+  bool result = false;
 
   while (itr < argc)
   {
@@ -25,7 +26,6 @@ int getParams(int argc, char* argv[], uint16_t* pid, char** in, char** out)
       if (itr < argc)
       {
         *pid = strtol(argv[itr], NULL, 0);
-        result--;
       }
       else
       {
@@ -38,7 +38,7 @@ int getParams(int argc, char* argv[], uint16_t* pid, char** in, char** out)
       if (itr < argc)
       {
         *in = argv[itr];
-        result--;
+        result = true;
       }
       else
       {
@@ -51,7 +51,6 @@ int getParams(int argc, char* argv[], uint16_t* pid, char** in, char** out)
       if (itr < argc)
       {
         *out = argv[itr];
-        result--;
       }
       else
       {
@@ -63,14 +62,47 @@ int getParams(int argc, char* argv[], uint16_t* pid, char** in, char** out)
   return result;
 }
 
-int parseTsStream(uint16_t pid, char* in, char* out)
+void showTsPids(std::map<uint16_t, ts_pid_t>& pids)
+{
+  uint64_t  pids_cnt = pids.size();
+
+  printf("List of pids (%d)\n\r", pids_cnt);
+  for (std::map<uint16_t,ts_pid_t>::iterator it = pids.begin(); it != pids.end(); it++)
+  {
+    ts_pid_t pid = it->second;
+
+    printf("    0x%04X [%4d] - %ul\n\r", pid.pid, pid.pid, (unsigned long) pid.count);
+  }
+}
+
+bool parseTsStream(uint16_t pid, char* in, char* out)
 {
   TsFileBase  tsfile(in);
-  int result = 1;
+  bool result = false;
 
   if (tsfile.parse())
   {
-    result = tsfile.extractPid(pid, out ? out : "") ? 0 : 1;
+    if ((pid >= 0) && (pid <= 0x1FFF))
+    {
+      if (tsfile.extractPid(pid, out ? out : ""))
+      {
+        result = true;
+      }
+      else
+      {
+        printf("No Pid: 0x%04X [%d] in the stream.\n\r", pid, pid);
+      }
+    }
+    else
+    {
+      std::map<uint16_t, ts_pid_t> pids;
+
+      if (tsfile.getTsPids(pids))
+      {
+        showTsPids(pids);
+        result = true;
+      }
+    }
   }
   return result;
 }
@@ -79,23 +111,22 @@ int main(int argc, char* argv[])
 {
   char* in = nullptr;
   char* out = nullptr;
-  uint16_t  pid;
+  uint16_t  pid = 0xFFFF;
 
-  int result = 1;
+  bool result = false;
 
-  printf("PidExtractor ver. %s\n", PID_EXCTRACTOR_VERSION);
+  printf("PidExtractor ver. %s\n\r", PID_EXCTRACTOR_VERSION);
   if (argc <= 1)
   {
-    printf("   Usage: PidExtractor --pid <pid to extract> --in <input TS file> --out <extracted pid file>\n");
+    printf("   Usage: PidExtractor --pid <pid to extract> --in <input TS file> --out <extracted pid file>\n\r");
   }
   else
   {
-    result = getParams(argc, argv, &pid, &in, &out);
-    if (result == 0)
+    if (getParams(argc, argv, &pid, &in, &out))
     {
       result = parseTsStream(pid, in, out);
     }
   }
-  printf("PidExtractor DONE: %d\n", result);
+  printf("PidExtractor: %s\n\r", result ? "Ok" : "Fail");
   return result;
 }
