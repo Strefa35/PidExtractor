@@ -11,7 +11,6 @@
 				<Option object_output="obj/Debug/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
-				<Option parameters="--pid 0x0 --in C:\Users\Arkadiusz_Czerwinski\streams\PSI\ClPCDC_PSI_Multi_01.03.ts" />
 				<Compiler>
 					<Add option="-g" />
 					<Add directory="include" />
