@@ -155,7 +155,7 @@ bool TsFileBase::findTsPacketSize(void)
   if (!ts_error)
   {
     printf("OK    \n\r");
-    printf("  Packet count: %u\n\r", packet_cnt);
+    printf("  Packet count: %lu\n\r", packet_cnt);
     printf("   Packet size: %d\n\r", packet_size);
 
     m_packet_size = packet_size;

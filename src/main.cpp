@@ -80,7 +80,7 @@ bool parseTsStream(uint16_t pid, char* in, char* out)
 
   if (tsfile.parse())
   {
-    if ((pid >= 0) && (pid <= 0x1FFF))
+    if (pid <= 0x1FFF)
     {
       if (tsfile.extractPid(pid, out ? out : ""))
       {
