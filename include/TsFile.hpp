@@ -40,13 +40,13 @@ typedef struct ts_pid_s
 class TsFileBase
 {
   public:
-    TsFileBase(std::string fileName);
+    TsFileBase(std::string& fileName);
     ~TsFileBase();
 
     bool parse(void);
 
     bool getTsPids(std::map<uint16_t, ts_pid_t>** pids);
-    bool extractPid(uint16_t pid, std::string fileName);
+    bool extractPid(uint16_t pid, std::string& fileName);
 
   private:
     uint64_t getSize(void);
@@ -60,7 +60,9 @@ class TsFileBase
     bool setSeek(uint64_t offset);
     void showTsHeader(uint64_t idx, ts_packet_t* packet_ptr);
 
-    bool writePid(uint16_t pid, std::vector<ts_packet_t>& packets, std::string fileName);
+    bool writePid(uint16_t pid, std::vector<ts_packet_t>& packets, std::string& fileName);
+
+    bool extractPath(std::string& filename, std::string& path, std::string& name);
 
     std::string     m_filename;
 

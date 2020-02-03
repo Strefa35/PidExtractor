@@ -9,7 +9,7 @@
 
 #include "TsFile.hpp"
 
-#define PID_EXCTRACTOR_VERSION    "0.0.4"
+#define PID_EXCTRACTOR_VERSION    "0.0.5"
 
 #define UNKNOWN_PID   0xFFFF
 
@@ -75,14 +75,16 @@ void showTsPids(std::map<uint16_t, ts_pid_t>& pids)
 
 bool parseTsStream(uint16_t pid, char* in, char* out)
 {
-  TsFileBase  tsfile(in);
+  std::string fin(in ? in : "");
+  std::string fout(out ? out : "");
+  TsFileBase  tsfile(fin);
   bool result = false;
 
   if (tsfile.parse())
   {
     if (pid <= 0x1FFF)
     {
-      if (tsfile.extractPid(pid, out ? out : ""))
+      if (tsfile.extractPid(pid, fout))
       {
         result = true;
       }

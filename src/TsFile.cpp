@@ -7,6 +7,7 @@
 #include <string>
 #include <cassert>
 #include <sstream>
+#include <iomanip>
 
 #include "TsFile.hpp"
 
@@ -27,11 +28,12 @@
 #define TS_AFC_ADAPTATION   (0x2)
 
 
-TsFileBase::TsFileBase(std::string fileName) :
+TsFileBase::TsFileBase(std::string& fileName) :
       m_packet_size(TS_PACKET_SIZE),
       m_ts_packet(nullptr)
 {
-  DBGS(DbgWrite("++%s(fileName: %s)\n", __func__, fileName.c_str());)
+  DBGS(DbgWrite("++%s(fileName: %s)\n", __func__,
+          fileName.empty() ? "-" : fileName.c_str());)
 
   m_fSize = 0;
   m_filename = fileName;
@@ -41,15 +43,6 @@ TsFileBase::TsFileBase(std::string fileName) :
   {
     if (getSize())
     {
-      m_packet_size = 0;
-      if (m_packet_size || findTsPacketSize())
-      {
-        m_ts_packet = new uint8_t [TS_BUFFER];
-        if (m_ts_packet)
-        {
-          std::memset(m_ts_packet, 0x00, TS_BUFFER);
-        }
-      }
     }
   }
   DBGR(DbgWrite("--%s()\n", __func__);)
@@ -234,33 +227,75 @@ void TsFileBase::parseTsHeader(uint64_t offset, uint8_t* header_ptr, uint32_t he
 
 bool TsFileBase::parse(void)
 {
-  bool result = true;
+  bool result = false;
 
   DBGS(DbgWrite("++%s()\n", __func__);)
-  readTsStream();
+  m_packet_size = 0;
+  if (m_packet_size || findTsPacketSize())
+  {
+    m_ts_packet = new uint8_t [TS_BUFFER];
+    if (m_ts_packet)
+    {
+      std::memset(m_ts_packet, 0x00, TS_BUFFER);
+      readTsStream();
+      result = true;
+    }
+  }
   DBGR(DbgWrite("--%s() - result: %d\n", __func__, result);)
   return result;
 }
 
-bool TsFileBase::writePid(uint16_t pid, std::vector<ts_packet_t>& packets, std::string fileName)
+bool TsFileBase::extractPath(std::string& filename, std::string& path, std::string& name)
 {
-  uint16_t packet_size = m_packet_size;
-  std::stringstream name;
-  std::ofstream fid;
-  bool result = true;
+  std::size_t found = filename.rfind('\\');
+  bool result = false;
 
-  DBGS(DbgWrite("++%s(pid: 0x%04X [%d], fileName: %s)\n", __func__, pid, pid, fileName.c_str());)
-  if (fileName.empty())
+  DBGS(DbgWrite("++%s()\n", __func__);)
+  if (found != std::string::npos)
   {
-    name << "Pid_0x" << std::hex << pid << "_" << m_filename;
+    path = filename.substr(0, found + 1);
+    name = filename.substr(found + 1, filename.length() - (found + 1));
+    result = true;
   }
   else
   {
-    name << fileName;
+    name = filename;
   }
-  DBG1(DbgWrite("   %s() filename: %s\n", __func__, name.str().c_str());)
+  DBG1(DbgWrite("   filename: '%s'\n", filename.c_str());)
+  DBG1(DbgWrite("       path: '%s'\n", path.c_str());)
+  DBG1(DbgWrite("       name: '%s'\n", name.c_str());)
+  DBGR(DbgWrite("--%s() - result: %d\n", __func__, result);)
+  return result;
+}
 
-  fid.open(name.str().c_str(), std::ofstream::out | std::ifstream::binary);
+bool TsFileBase::writePid(uint16_t pid, std::vector<ts_packet_t>& packets, std::string& fileName)
+{
+  uint16_t packet_size = m_packet_size;
+
+  std::stringstream stream;
+
+  std::string fpath = "";
+  std::string fname = "";
+
+  std::ofstream fid;
+  bool result = true;
+
+  DBGS(DbgWrite("++%s(pid: 0x%04X [%d], fileName: %s)\n", __func__, pid, pid,
+          fileName.empty() ? "-" : fileName.c_str());)
+  if (fileName.empty())
+  {
+    if (extractPath(m_filename, fpath, fname))
+    {
+      DBG1(DbgWrite("   path: %s\n", fpath.c_str());)
+      DBG1(DbgWrite("   name: %s\n", fname.c_str());)
+    }
+    stream << fpath << "Pid_0x" << std::setfill('0') << std::setw(4) << std::hex << pid << "_" << fname;
+    fileName.assign(stream.str());
+  }
+
+  DBG1(DbgWrite("   %s() filename: %s\n", __func__, fileName.c_str());)
+
+  fid.open(fileName, std::ofstream::out | std::ifstream::binary);
   if (fid.is_open())
   {
     auto packets_cnt = packets.size();
@@ -283,12 +318,13 @@ bool TsFileBase::writePid(uint16_t pid, std::vector<ts_packet_t>& packets, std::
   return result;
 }
 
-bool TsFileBase::extractPid(uint16_t pid, std::string fileName)
+bool TsFileBase::extractPid(uint16_t pid, std::string& fileName)
 {
   std::map<uint16_t, ts_pid_t>::iterator it;
   bool result = false;
 
-  DBGS(DbgWrite("++%s(pid: 0x%04X [%d], fileName: %s)\n", __func__, pid, pid, fileName.c_str());)
+  DBGS(DbgWrite("++%s(pid: 0x%04X [%d], fileName: %s)\n", __func__, pid, pid,
+          fileName.empty() ? "-" : fileName.c_str());)
   it = m_ts_pids.find(pid);
   if (it != m_ts_pids.end())
   {
